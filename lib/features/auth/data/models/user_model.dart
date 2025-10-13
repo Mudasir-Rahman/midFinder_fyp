@@ -26,7 +26,7 @@ class UserModel extends UserEntity {
     );
   }
 
-  // Add this helper method to safely parse DateTime
+
   static DateTime? _parseDateTime(dynamic date) {
     if (date == null) return null;
     if (date is DateTime) return date;

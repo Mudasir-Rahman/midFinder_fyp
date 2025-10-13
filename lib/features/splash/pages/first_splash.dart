@@ -154,7 +154,7 @@ class _SplashPageState extends State<SplashPage> {
     } else if (role == 'pharmacyowner') {
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => PharmacyRegistrationPage(user: user.id)),
+        MaterialPageRoute(builder: (context) => PharmacyRegistrationPage(user: user)),
             (route) => false,
       );
     } else {

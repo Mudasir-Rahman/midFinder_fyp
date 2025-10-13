@@ -3,14 +3,14 @@ import 'package:equatable/equatable.dart';
 class UserEntity extends Equatable {
   final String id;
   final String email;
-  final String? password; // ADD THIS for signup/login
+  final String? password;
   final String? role;
   final DateTime? createdAt;
 
   const UserEntity({
     required this.id,
     required this.email,
-    this.password, // ADD THIS
+    this.password,
     this.role,
     this.createdAt,
   });
