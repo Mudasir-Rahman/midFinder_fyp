@@ -1,11 +1,14 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:rx_locator/core/constant/app_color.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'core/constant/app_color.dart';
 import 'core/keys/app_secret.dart';
+import 'core/services/image_upload_service.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
+import 'features/auth/presentation/bloc/auth_event.dart';
+import 'features/medicine/presentation/bloc/medicine_bloc.dart';
 import 'features/patient/presentation/bloc/patient_bloc.dart';
 import 'features/pharmacy/presentation/bloc/pharmacy_bloc.dart';
 import 'features/splash/pages/first_splash.dart';
@@ -14,54 +17,157 @@ import 'init_dependence.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Supabase first
-  await _initializeSupabase();
+  print('🔵 Starting app initialization...');
 
-  // Then initialize dependencies
+  await _initializeSupabase();
   await _initializeDependencies();
 
   runApp(const MyApp());
 }
 
+/// =======================================================
+/// SUPABASE INITIALIZATION (CORRECT VERSION)
+/// =======================================================
 Future<void> _initializeSupabase() async {
   try {
+    print('🔵 Initializing Supabase...');
     await Supabase.initialize(
       url: SupabaseKeys.url,
       anonKey: SupabaseKeys.anonKey,
-      debug: false, // Set to true for development
+      debug: true, // Keep true for debugging auth issues
     );
-  } catch (e) {
-    throw Exception('Failed to initialize Supabase: $e');
+    print('✅ Supabase initialized successfully');
+
+    // ✅ Check current session on startup
+    final session = Supabase.instance.client.auth.currentSession;
+    final user = Supabase.instance.client.auth.currentUser;
+    print('🔐 Startup Auth Check:');
+    print('   Session: ${session != null}');
+    print('   User: ${user?.email}');
+    print('   User ID: ${user?.id}');
+
+  } catch (e, st) {
+    print('❌ Failed to initialize Supabase: $e');
+    print(st);
+    rethrow;
   }
 }
 
+/// =======================================================
+/// DEPENDENCY INJECTION INITIALIZATION
+/// =======================================================
 Future<void> _initializeDependencies() async {
   try {
+    print('🔵 Initializing dependencies...');
     await initDependencies();
-  } catch (e) {
-    throw Exception('Failed to initialize dependencies: $e');
+    print('✅ Dependencies initialized successfully');
+
+    // Optional: Verify registrations (safe debug checks)
+    try {
+      sl<ImageUploadService>();
+      print('✅ ImageUploadService registered correctly.');
+    } catch (e) {
+      print('❌ ImageUploadService registration failed: $e');
+    }
+
+    try {
+      sl<MedicineBloc>();
+      print('✅ MedicineBloc created successfully.');
+    } catch (e) {
+      print('❌ MedicineBloc creation failed: $e');
+    }
+  } catch (e, st) {
+    print('❌ Dependency initialization failed: $e');
+    print(st);
+    rethrow;
   }
 }
 
-class MyApp extends StatelessWidget {
+/// =======================================================
+/// ROOT APP WIDGET WITH AUTH STATE MANAGEMENT
+/// =======================================================
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  final SupabaseClient _supabase = Supabase.instance.client;
+  User? _currentUser;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeAuth();
+    _setupAuthListener();
+  }
+
+  // ✅ Initialize auth state and check current user
+  void _initializeAuth() {
+    final user = _supabase.auth.currentUser;
+    setState(() {
+      _currentUser = user;
+    });
+
+    print('🔐 App Startup - User: ${user?.email}');
+
+    // If user exists, check auth status in bloc
+    if (user != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        context.read<AuthBloc>().add(CheckAuthStatusEvent());
+      });
+    }
+  }
+
+  // ✅ Listen for auth state changes
+  void _setupAuthListener() {
+    _supabase.auth.onAuthStateChange.listen((data) {
+      final AuthChangeEvent event = data.event;
+      final Session? session = data.session;
+      final User? user = data.session?.user;
+
+      print('🔐 Auth State Changed: $event');
+      print('   User: ${user?.email}');
+      print('   Session: ${session != null}');
+
+      setState(() {
+        _currentUser = user;
+      });
+
+      // Handle auth events
+      if (event == AuthChangeEvent.signedIn && user != null) {
+        print('✅ User signed in: ${user.email}');
+        // Trigger auth status check after sign in
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          context.read<AuthBloc>().add(CheckAuthStatusEvent());
+        });
+      } else if (event == AuthChangeEvent.signedOut) {
+        print('🚪 User signed out');
+        setState(() {
+          _currentUser = null;
+        });
+      } else if (event == AuthChangeEvent.tokenRefreshed) {
+        print('🔄 Token refreshed for: ${user?.email}');
+      } else if (event == AuthChangeEvent.userUpdated) {
+        print('👤 User updated: ${user?.email}');
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider<AuthBloc>(
-          create: (context) => sl<AuthBloc>(),
-        ),
-        BlocProvider<PatientBloc>(
-          create: (context) => sl<PatientBloc>(),
-        ),
-        BlocProvider<PharmacyBloc>(
-          create: (context) => sl<PharmacyBloc>(),
-        ),
+        BlocProvider(create: (_) => sl<AuthBloc>()),
+        BlocProvider(create: (_) => sl<PatientBloc>()),
+        BlocProvider(create: (_) => sl<PharmacyBloc>()),
+        BlocProvider(create: (_) => sl<MedicineBloc>()),
       ],
       child: MaterialApp(
         title: 'Rx Locator',
+        debugShowCheckedModeBanner: false,
         theme: ThemeData(
           primaryColor: AppColor.primaryColor,
           scaffoldBackgroundColor: AppColor.backgroundColor,
@@ -92,7 +198,6 @@ class MyApp extends StatelessWidget {
           ),
         ),
         home: const SplashPage(),
-        debugShowCheckedModeBanner: false,
       ),
     );
   }

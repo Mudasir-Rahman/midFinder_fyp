@@ -1,18 +1,18 @@
 import 'package:equatable/equatable.dart';
 import '../../domain/entities/user_entities.dart';
 
-abstract class AuthState extends Equatable {
-  const AuthState();
+abstract class AppAuthState extends Equatable {
+  const AppAuthState(); // Fixed: Changed from AuthState to AppAuthState
 
   @override
   List<Object?> get props => [];
 }
 
-class AuthInitial extends AuthState {}
+class AuthInitial extends AppAuthState {} // Fixed: extends AppAuthState
 
-class AuthLoading extends AuthState {}
+class AuthLoading extends AppAuthState {} // Fixed: extends AppAuthState
 
-class AuthAuthenticated extends AuthState {
+class AuthAuthenticated extends AppAuthState { // Fixed: extends AppAuthState
   final UserEntity user;
   const AuthAuthenticated(this.user);
 
@@ -20,9 +20,9 @@ class AuthAuthenticated extends AuthState {
   List<Object?> get props => [user];
 }
 
-class AuthUnauthenticated extends AuthState {}
+class AuthUnauthenticated extends AppAuthState {} // Fixed: extends AppAuthState
 
-class AuthError extends AuthState {
+class AuthError extends AppAuthState { // Fixed: extends AppAuthState
   final String message;
   const AuthError(this.message);
 
@@ -30,14 +30,15 @@ class AuthError extends AuthState {
   List<Object?> get props => [message];
 }
 
-class AuthRoleSelected extends AuthState {
+class AuthRoleSelected extends AppAuthState { // Fixed: extends AppAuthState
   final String role;
   const AuthRoleSelected(this.role);
 
   @override
   List<Object?> get props => [role];
 }
-class AuthRegistrationCheck extends AuthState {
+
+class AuthRegistrationCheck extends AppAuthState { // Fixed: extends AppAuthState
   final UserEntity user;
   const AuthRegistrationCheck(this.user);
 
@@ -45,7 +46,7 @@ class AuthRegistrationCheck extends AuthState {
   List<Object?> get props => [user];
 }
 
-class AuthRegistrationComplete extends AuthState {
+class AuthRegistrationComplete extends AppAuthState { // Fixed: extends AppAuthState
   final UserEntity user;
   const AuthRegistrationComplete(this.user);
 
@@ -53,7 +54,7 @@ class AuthRegistrationComplete extends AuthState {
   List<Object?> get props => [user];
 }
 
-class AuthRegistrationIncomplete extends AuthState {
+class AuthRegistrationIncomplete extends AppAuthState { // Fixed: extends AppAuthState
   final UserEntity user;
   const AuthRegistrationIncomplete(this.user);
 

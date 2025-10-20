@@ -1,6 +1,8 @@
-//
 // import 'package:get_it/get_it.dart';
 // import 'package:supabase_flutter/supabase_flutter.dart';
+//
+// // ===== Auth Imports =====
+// import 'core/services/image_upload_service.dart';
 // import 'features/auth/data/data_source/auth_remote_data_source.dart';
 // import 'features/auth/data/data_source/auth_remote_data_source_impl.dart';
 // import 'features/auth/data/repository/repository_impl.dart';
@@ -10,7 +12,7 @@
 // import 'features/auth/domain/usecase/user_sign_up.dart';
 // import 'features/auth/presentation/bloc/auth_bloc.dart';
 //
-// // Patient Dependencies
+// // ===== Patient Imports =====
 // import 'features/patient/data/data_source/patient_remote_data_source.dart';
 // import 'features/patient/data/data_source/patient_remote_data_source_impl.dart';
 // import 'features/patient/data/repository/repository/patient_repository_impl.dart';
@@ -20,7 +22,7 @@
 // import 'features/patient/domain/usecase/update_patient_location.dart';
 // import 'features/patient/presentation/bloc/patient_bloc.dart';
 //
-// // Pharmacy Dependencies
+// // ===== Pharmacy Imports =====
 // import 'features/pharmacy/data/data_source/pharmacy_remote_data_source.dart';
 // import 'features/pharmacy/data/data_source/pharmacy_remote_data_source_impl.dart';
 // import 'features/pharmacy/data/repository/pharmacy_repository_impl.dart';
@@ -31,45 +33,69 @@
 // import 'features/pharmacy/domain/usecase/upload_license_image.dart';
 // import 'features/pharmacy/presentation/bloc/pharmacy_bloc.dart';
 //
+// // ===== Medicine Imports =====
+// import 'features/medicine/data/data_source/medicine_remote_data_source.dart';
+// import 'features/medicine/data/data_source/medicine_remote_data_source_impl.dart';
+// import 'features/medicine/data/repository/medicine_repository_impl.dart';
+// import 'features/medicine/domain/repository/medicine_repository.dart';
+// import 'features/medicine/domain/usecase/add_medicine.dart';
+// import 'features/medicine/domain/usecase/get_all_medicine.dart';
+// import 'features/medicine/domain/usecase/get_medicine_by_category.dart';
+// import 'features/medicine/domain/usecase/get_medicine_detail.dart';
+// import 'features/medicine/domain/usecase/get_pharmacy_medicine.dart';
+// import 'features/medicine/domain/usecase/search_medicine.dart';
+// import 'features/medicine/domain/usecase/update_medicine.dart';
+// import 'features/medicine/presentation/bloc/medicine_bloc.dart';
+//
+// // ===== Service Imports =====
+//
+//
 // final sl = GetIt.instance;
 //
 // Future<void> initDependencies() async {
 //   await _initAuth();
 //   await _initPatient();
 //   await _initPharmacy();
+//   await _initMedicine();
 // }
 //
+// /// ===============================
+// /// AUTH FEATURE
+// /// ===============================
 // Future<void> _initAuth() async {
-//   sl.registerLazySingleton<SupabaseClient>(
-//         () {
-//       try {
-//         return Supabase.instance.client;
-//       } catch (e) {
-//         throw Exception('Supabase not initialized: $e');
-//       }
-//     },
-//   );
+//   // ✅ Supabase Client (register only once)
+//   if (!sl.isRegistered<SupabaseClient>()) {
+//     sl.registerLazySingleton<SupabaseClient>(
+//           () {
+//         try {
+//           return Supabase.instance.client;
+//         } catch (e) {
+//           throw Exception('Supabase not initialized: $e');
+//         }
+//       },
+//     );
+//   }
 //
-//   // Data Sources
+//   // ✅ Data Source
 //   sl.registerLazySingleton<AuthRemoteDataSource>(
 //         () => AuthRemoteDataSourceImpl(supabaseClient: sl()),
 //   );
 //
-//   // Repositories
+//   // ✅ Repository
 //   sl.registerLazySingleton<AuthRepository>(
 //         () => AuthRepositoryImpl(remoteDataSource: sl()),
 //   );
 //
-//   // Use Cases
+//   // ✅ Use Cases
 //   sl.registerLazySingleton(() => UserSignUp(sl()));
 //   sl.registerLazySingleton(() => UserLogin(sl()));
 //   sl.registerLazySingleton(() => GetCurrentUser(sl()));
 //
-//   // ✅ REGISTER HERE for AuthBloc registration checks (Single registration)
+//   // Shared use cases for both Auth and role-based flows
 //   sl.registerLazySingleton(() => GetPatientProfileUseCase(sl()));
 //   sl.registerLazySingleton(() => GetPharmacyProfile(sl()));
 //
-//   // Updated AuthBloc with all dependencies
+//   // ✅ Bloc
 //   sl.registerFactory<AuthBloc>(
 //         () => AuthBloc(
 //       userSignUp: sl(),
@@ -81,70 +107,118 @@
 //   );
 // }
 //
+// /// ===============================
+// /// PATIENT FEATURE
+// /// ===============================
 // Future<void> _initPatient() async {
-//   // Data Sources
+//   // ✅ Data Source
 //   sl.registerLazySingleton<PatientRemoteDataSource>(
 //         () => PatientRemoteDataSourceImpl(supabaseClient: sl()),
 //   );
 //
-//   // Repositories
+//   // ✅ Repository
 //   sl.registerLazySingleton<PatientRepository>(
 //         () => PatientRepositoryImpl(remoteDataSource: sl()),
 //   );
 //
-//   // Use Cases
+//   // ✅ Use Cases
 //   sl.registerLazySingleton(() => RegisterPatientUseCase(sl()));
 //   sl.registerLazySingleton(() => UpdatePatientLocationUseCase(sl()));
 //
-//   // ❌ REMOVED DUPLICATE - Already registered in _initAuth()
-//   // PatientBloc will use the same instance from _initAuth()
-//
-//   // Bloc
+//   // ✅ Bloc
 //   sl.registerFactory<PatientBloc>(
 //         () => PatientBloc(
 //       registerPatient: sl(),
-//       getPatientProfile: sl(), // Uses the same instance from _initAuth()
+//       getPatientProfile: sl(),
 //       updatePatientLocation: sl(),
 //     ),
 //   );
 // }
 //
+// /// ===============================
+// /// PHARMACY FEATURE
+// /// ===============================
 // Future<void> _initPharmacy() async {
-//   // Data Sources
+//   // ✅ Data Source
 //   sl.registerLazySingleton<PharmacyRemoteDataSource>(
 //         () => PharmacyRemoteDataSourceImpl(supabaseClient: sl()),
 //   );
 //
-//   // Repositories
+//   // ✅ Repository
 //   sl.registerLazySingleton<PharmacyRepository>(
 //         () => PharmacyRepositoryImpl(remoteDataSource: sl()),
 //   );
 //
-//   // Use Cases
+//   // ✅ Use Cases
 //   sl.registerLazySingleton(() => RegisterPharmacy(sl()));
 //   sl.registerLazySingleton(() => UpdatePharmacyProfile(sl()));
 //   sl.registerLazySingleton(() => UploadLicenseImage(sl()));
 //
-//   // ❌ REMOVED DUPLICATE - Already registered in _initAuth()
-//   // PharmacyBloc will use the same instance from _initAuth()
-//
-//   // Bloc
+//   // ✅ Bloc
 //   sl.registerFactory<PharmacyBloc>(
 //         () => PharmacyBloc(
 //       registerPharmacy: sl(),
-//       getPharmacyProfile: sl(), // Uses the same instance from _initAuth()
+//       getPharmacyProfile: sl(),
 //       updatePharmacyProfile: sl(),
 //       uploadLicenseImage: sl(),
 //     ),
 //   );
 // }
 //
-// // Helper method to reset dependencies (useful for testing)
+// /// ===============================
+// /// MEDICINE FEATURE
+// /// ===============================
+// Future<void> _initMedicine() async {
+//   // ✅ Data Source
+//   sl.registerLazySingleton<MedicineRemoteDataSource>(
+//         () => MedicineRemoteDataSourceImpl(supabaseClient: sl()),
+//   );
+//
+//   // ✅ Repository
+//   sl.registerLazySingleton<MedicineRepository>(
+//         () => MedicineRepositoryImpl(remoteDataSource: sl()),
+//   );
+//
+//   // ✅ Services
+//   sl.registerLazySingleton<ImageUploadService>(
+//         () => ImageUploadService(supabaseClient: sl()),
+//   );
+//
+//   // ✅ Use Cases
+//   sl.registerLazySingleton(() => SearchMedicine(sl()));
+//   sl.registerLazySingleton(() => GetMedicineDetail(sl()));
+//   sl.registerLazySingleton(() => AddMedicine(sl()));
+//   sl.registerLazySingleton(() => UpdateMedicine(sl()));
+//   sl.registerLazySingleton(() => GetMedicinePharmacy(sl()));
+//   sl.registerLazySingleton(() => GetMedicineByCategory(sl()));
+//   sl.registerLazySingleton(() => GetAllMedicines(sl()));
+//
+//   // ✅ Bloc
+//   sl.registerFactory<MedicineBloc>(
+//         () => MedicineBloc(
+//       searchMedicine: sl(),
+//       getMedicineDetail: sl(),
+//       addMedicine: sl(),
+//       updateMedicine: sl(),
+//       getPharmacyMedicine: sl(),
+//       getMedicineByCategory: sl(),
+//       getAllMedicines: sl(),
+//       imageUploadService: sl(),
+//     ),
+//   );
+// }
+//
+// /// ===============================
+// /// UTILITY
+// /// ===============================
 // Future<void> resetDependencies() async {
 //   await sl.reset();
 // }
 import 'package:get_it/get_it.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+// ===== Core Services =====
+import 'package:rx_locator/core/services/image_upload_service.dart';
 
 // ===== Auth Imports =====
 import 'features/auth/data/data_source/auth_remote_data_source.dart';
@@ -177,51 +251,70 @@ import 'features/pharmacy/domain/usecase/update_pharmacy_profile.dart';
 import 'features/pharmacy/domain/usecase/upload_license_image.dart';
 import 'features/pharmacy/presentation/bloc/pharmacy_bloc.dart';
 
+// ===== Medicine Imports =====
+import 'features/medicine/data/data_source/medicine_remote_data_source.dart';
+import 'features/medicine/data/data_source/medicine_remote_data_source_impl.dart';
+import 'features/medicine/data/repository/medicine_repository_impl.dart';
+import 'features/medicine/domain/repository/medicine_repository.dart';
+import 'features/medicine/domain/usecase/add_medicine.dart';
+import 'features/medicine/domain/usecase/get_all_medicine.dart';
+import 'features/medicine/domain/usecase/get_medicine_by_category.dart';
+import 'features/medicine/domain/usecase/get_medicine_detail.dart';
+import 'features/medicine/domain/usecase/get_pharmacy_medicine.dart';
+import 'features/medicine/domain/usecase/search_medicine.dart';
+import 'features/medicine/domain/usecase/update_medicine.dart';
+import 'features/medicine/presentation/bloc/medicine_bloc.dart';
+
 final sl = GetIt.instance;
 
+/// =======================================================
+/// MAIN INITIALIZATION
+/// =======================================================
 Future<void> initDependencies() async {
+  await _initCore();      // ✅ Must run first!
   await _initAuth();
   await _initPatient();
   await _initPharmacy();
+  await _initMedicine();
 }
 
-/// ===============================
-/// AUTH FEATURE
-/// ===============================
-Future<void> _initAuth() async {
-  // ✅ Supabase Client (register only once)
+/// =======================================================
+/// CORE SERVICES (Supabase + Shared Services)
+/// =======================================================
+Future<void> _initCore() async {
+  // ✅ Supabase client (register once globally)
   if (!sl.isRegistered<SupabaseClient>()) {
-    sl.registerLazySingleton<SupabaseClient>(
-          () {
-        try {
-          return Supabase.instance.client;
-        } catch (e) {
-          throw Exception('Supabase not initialized: $e');
-        }
-      },
-    );
+    sl.registerLazySingleton<SupabaseClient>(() => Supabase.instance.client);
   }
 
-  // ✅ Data Source
+  // ✅ ImageUploadService shared across modules
+  if (!sl.isRegistered<ImageUploadService>()) {
+    sl.registerLazySingleton<ImageUploadService>(
+          () => ImageUploadService(sl<SupabaseClient>()),
+    );
+  }
+}
+
+/// =======================================================
+/// AUTH FEATURE
+/// =======================================================
+Future<void> _initAuth() async {
   sl.registerLazySingleton<AuthRemoteDataSource>(
         () => AuthRemoteDataSourceImpl(supabaseClient: sl()),
   );
 
-  // ✅ Repository
   sl.registerLazySingleton<AuthRepository>(
         () => AuthRepositoryImpl(remoteDataSource: sl()),
   );
 
-  // ✅ Use Cases
   sl.registerLazySingleton(() => UserSignUp(sl()));
   sl.registerLazySingleton(() => UserLogin(sl()));
   sl.registerLazySingleton(() => GetCurrentUser(sl()));
 
-  // Shared use cases for both Auth and role-based flows
+  // Shared use cases for role-based access
   sl.registerLazySingleton(() => GetPatientProfileUseCase(sl()));
   sl.registerLazySingleton(() => GetPharmacyProfile(sl()));
 
-  // ✅ Bloc
   sl.registerFactory<AuthBloc>(
         () => AuthBloc(
       userSignUp: sl(),
@@ -233,67 +326,95 @@ Future<void> _initAuth() async {
   );
 }
 
-/// ===============================
+/// =======================================================
 /// PATIENT FEATURE
-/// ===============================
+/// =======================================================
 Future<void> _initPatient() async {
-  // ✅ Data Source
   sl.registerLazySingleton<PatientRemoteDataSource>(
         () => PatientRemoteDataSourceImpl(supabaseClient: sl()),
   );
 
-  // ✅ Repository
   sl.registerLazySingleton<PatientRepository>(
         () => PatientRepositoryImpl(remoteDataSource: sl()),
   );
 
-  // ✅ Use Cases
   sl.registerLazySingleton(() => RegisterPatientUseCase(sl()));
   sl.registerLazySingleton(() => UpdatePatientLocationUseCase(sl()));
 
-  // ✅ Bloc
   sl.registerFactory<PatientBloc>(
         () => PatientBloc(
       registerPatient: sl(),
-      getPatientProfile: sl(), // uses same instance from Auth
+      getPatientProfile: sl(),
       updatePatientLocation: sl(),
     ),
   );
 }
 
-/// ===============================
+/// =======================================================
 /// PHARMACY FEATURE
-/// ===============================
+/// =======================================================
 Future<void> _initPharmacy() async {
-  // ✅ Data Source
   sl.registerLazySingleton<PharmacyRemoteDataSource>(
         () => PharmacyRemoteDataSourceImpl(supabaseClient: sl()),
   );
 
-  // ✅ Repository
   sl.registerLazySingleton<PharmacyRepository>(
         () => PharmacyRepositoryImpl(remoteDataSource: sl()),
   );
 
-  // ✅ Use Cases
   sl.registerLazySingleton(() => RegisterPharmacy(sl()));
   sl.registerLazySingleton(() => UpdatePharmacyProfile(sl()));
   sl.registerLazySingleton(() => UploadLicenseImage(sl()));
 
-  // ✅ Bloc
   sl.registerFactory<PharmacyBloc>(
         () => PharmacyBloc(
       registerPharmacy: sl(),
-      getPharmacyProfile: sl(), // shared from Auth init
+      getPharmacyProfile: sl(),
       updatePharmacyProfile: sl(),
       uploadLicenseImage: sl(),
     ),
   );
 }
 
-/// ===============================
-/// UTILITY
-/// ===============================
+/// =======================================================
+/// MEDICINE FEATURE
+/// =======================================================
+Future<void> _initMedicine() async {
+  sl.registerLazySingleton<MedicineRemoteDataSource>(
+        () => MedicineRemoteDataSourceImpl(supabaseClient: sl()),
+  );
+
+  sl.registerLazySingleton<MedicineRepository>(
+        () => MedicineRepositoryImpl(remoteDataSource: sl()),
+  );
+
+  // ✅ No need to register ImageUploadService here — it’s in _initCore()
+
+  sl.registerLazySingleton(() => SearchMedicine(sl()));
+  sl.registerLazySingleton(() => GetMedicineDetail(sl()));
+  sl.registerLazySingleton(() => AddMedicine(sl()));
+  sl.registerLazySingleton(() => UpdateMedicine(sl()));
+  sl.registerLazySingleton(() => GetMedicinePharmacy(sl()));
+  sl.registerLazySingleton(() => GetMedicineByCategory(sl()));
+  sl.registerLazySingleton(() => GetAllMedicines(sl()));
+
+  sl.registerFactory<MedicineBloc>(
+        () => MedicineBloc(
+      searchMedicine: sl(),
+      getMedicineDetail: sl(),
+      addMedicine: sl(),
+      updateMedicine: sl(),
+      getPharmacyMedicine: sl(),
+      getMedicineByCategory: sl(),
+      getAllMedicines: sl(),
+      imageUploadService: sl(), // ✅ Already available from _initCore
+    ),
+  );
+}
+
+/// =======================================================
+/// UTILITY — For testing / hot reload safety
+/// =======================================================
 Future<void> resetDependencies() async {
   await sl.reset();
 }

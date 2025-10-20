@@ -155,4 +155,49 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       throw ServerException('Get current user failed: $e');
     }
   }
+
+  // ADD THIS NEW METHOD: Verify User Authentication
+  @override
+  Future<bool> verifyUserAuth(String userId) async {
+    try {
+      print('🔐 AUTH REMOTE DATA SOURCE: Verifying user $userId');
+
+      // Check if we have a current user session
+      final currentUser = supabaseClient.auth.currentUser;
+      if (currentUser == null) {
+        print('❌ NO CURRENT USER SESSION');
+        return false;
+      }
+
+      // Check if the user ID matches
+      if (currentUser.id != userId) {
+        print('❌ USER ID MISMATCH: Expected $userId, Got ${currentUser.id}');
+        return false;
+      }
+
+      // Optional: Verify user exists in profiles table
+      try {
+        final profile = await supabaseClient
+            .from('profiles')
+            .select('id')
+            .eq('id', userId)
+            .maybeSingle();
+
+        if (profile == null) {
+          print('❌ USER NOT FOUND IN PROFILES TABLE');
+          return false;
+        }
+      } catch (e) {
+        print('⚠️ PROFILE CHECK FAILED, BUT CONTINUING: $e');
+        // Even if profile check fails, we still have valid auth session
+      }
+
+      print('✅ USER AUTH VERIFIED SUCCESSFULLY');
+      return true;
+
+    } catch (e) {
+      print('❌ AUTH VERIFICATION ERROR: $e');
+      return false;
+    }
+  }
 }

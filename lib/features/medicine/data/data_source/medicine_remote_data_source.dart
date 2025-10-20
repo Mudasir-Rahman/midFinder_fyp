@@ -1,5 +1,6 @@
 // lib/features/medicine/data/data_source/medicine_remote_data_source.dart
 
+import 'dart:io';
 import 'package:rx_locator/features/medicine/data/model/medicine_model.dart';
 
 abstract class MedicineRemoteDataSource {
@@ -12,11 +13,11 @@ abstract class MedicineRemoteDataSource {
   // Get medicine details - SINGLE medicine
   Future<MedicineModel> getMedicineDetail(String medicineId);
 
-  // Add new medicine - returns void
-  Future<void> addMedicine(MedicineModel medicine);
+  // Add new medicine (optionally with image)
+  Future<void> addMedicine(MedicineModel medicine, {File? imageFile});
 
-  // Update existing medicine - returns void
-  Future<void> updateMedicine(MedicineModel medicine);
+  // Update existing medicine (optionally with image)
+  Future<void> updateMedicine(MedicineModel medicine, {File? imageFile});
 
   // Get pharmacy's medicines
   Future<List<MedicineModel>> getPharmacyMedicine(String pharmacyId);
