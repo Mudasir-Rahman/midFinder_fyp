@@ -14,6 +14,7 @@ import 'features/pharmacy/presentation/bloc/pharmacy_bloc.dart';
 import 'features/splash/pages/first_splash.dart';
 import 'init_dependence.dart';
 
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -59,7 +60,7 @@ Future<void> _initializeSupabase() async {
 Future<void> _initializeDependencies() async {
   try {
     print('🔵 Initializing dependencies...');
-    await initDependencies();
+    await init(); // ✅ Changed from initDependencies() to init()
     print('✅ Dependencies initialized successfully');
 
     // Optional: Verify registrations (safe debug checks)
@@ -113,11 +114,9 @@ class _MyAppState extends State<MyApp> {
 
     print('🔐 App Startup - User: ${user?.email}');
 
-    // If user exists, check auth status in bloc
+    // If user exists, we'll handle auth status in the SplashPage
     if (user != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        context.read<AuthBloc>().add(CheckAuthStatusEvent());
-      });
+      print('✅ User found on startup: ${user.email}');
     }
   }
 
@@ -139,10 +138,6 @@ class _MyAppState extends State<MyApp> {
       // Handle auth events
       if (event == AuthChangeEvent.signedIn && user != null) {
         print('✅ User signed in: ${user.email}');
-        // Trigger auth status check after sign in
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          context.read<AuthBloc>().add(CheckAuthStatusEvent());
-        });
       } else if (event == AuthChangeEvent.signedOut) {
         print('🚪 User signed out');
         setState(() {

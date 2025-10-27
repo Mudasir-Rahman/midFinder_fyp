@@ -91,14 +91,20 @@ class AppColor {
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
   );
-
+  static const String defaultImageUrl =
+      'https://via.placeholder.com/150?text=No+Image';
   static const Gradient glassGradient = LinearGradient(
     colors: [Colors.white54, Colors.white10],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
-  // ============ SHIMMER GRADIENTS ============
+  // ============ PATIENT THEME COLORS ============
+  static const Color kPatientPrimary = Color(0xFF1E3E72);
+  static const Color kPatientBackground1 = Color(0xFFB3C7F9);
+  static const Color kPatientBackground2 = Color(0xFFDFE8FB);
+
+  // ============ SHIMMER GRADIENT ============
   static const Gradient shimmerGradient = LinearGradient(
     colors: [
       Color(0xFFEBEBF4),

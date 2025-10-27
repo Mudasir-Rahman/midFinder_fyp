@@ -1,3 +1,4 @@
+//
 // import 'package:flutter/material.dart';
 // import 'package:flutter_bloc/flutter_bloc.dart';
 // import '../../../../auth/domain/entities/user_entities.dart';
@@ -5,6 +6,7 @@
 // import '../../bloc/patient_bloc.dart';
 // import '../../bloc/patient_event.dart';
 // import '../../bloc/patient_state.dart';
+// import 'PatientDashboardPage.dart';
 //
 //
 // class PatientRegistrationPage extends StatefulWidget {
@@ -21,8 +23,21 @@
 //   final _cnicController = TextEditingController();
 //   final _phoneController = TextEditingController();
 //   final _addressController = TextEditingController();
-//   final _latitudeController = TextEditingController();
-//   final _longitudeController = TextEditingController();
+//
+//   void _submitForm() {
+//     if (_formKey.currentState!.validate()) {
+//       final patient = PatientEntity(
+//         userId: widget.user.id,
+//         name: _nameController.text.trim(),
+//         cnic: _cnicController.text.trim(),
+//         phone: _phoneController.text.trim(),
+//         address: _addressController.text.trim(),
+//         createdAt: DateTime.now(),
+//       );
+//
+//       context.read<PatientBloc>().add(RegisterPatientEvent(patient));
+//     }
+//   }
 //
 //   @override
 //   Widget build(BuildContext context) {
@@ -36,11 +51,11 @@
 //         padding: const EdgeInsets.all(16.0),
 //         child: Form(
 //           key: _formKey,
+//           autovalidateMode: AutovalidateMode.onUserInteraction,
 //           child: SingleChildScrollView(
 //             child: Column(
 //               crossAxisAlignment: CrossAxisAlignment.stretch,
 //               children: [
-//                 // Header
 //                 const SizedBox(height: 20),
 //                 const Text(
 //                   'Complete Your Profile',
@@ -55,7 +70,7 @@
 //                 ),
 //                 const SizedBox(height: 30),
 //
-//                 // Name Field
+//                 // Name
 //                 TextFormField(
 //                   controller: _nameController,
 //                   decoration: const InputDecoration(
@@ -66,30 +81,36 @@
 //                   validator: (value) {
 //                     if (value == null || value.isEmpty) {
 //                       return 'Please enter your name';
+//                     } else if (value.length < 3) {
+//                       return 'Name must be at least 3 characters';
 //                     }
 //                     return null;
 //                   },
 //                 ),
 //                 const SizedBox(height: 16),
 //
-//                 // CNIC Field
+//                 // CNIC
 //                 TextFormField(
 //                   controller: _cnicController,
 //                   decoration: const InputDecoration(
-//                     labelText: 'CNIC',
+//                     labelText: 'CNIC (without dashes)',
 //                     border: OutlineInputBorder(),
 //                     prefixIcon: Icon(Icons.badge),
+//                     hintText: '1234567890123',
 //                   ),
+//                   keyboardType: TextInputType.number,
 //                   validator: (value) {
 //                     if (value == null || value.isEmpty) {
 //                       return 'Please enter your CNIC';
+//                     } else if (!RegExp(r'^\d{13}$').hasMatch(value)) {
+//                       return 'CNIC must be exactly 13 digits';
 //                     }
 //                     return null;
 //                   },
 //                 ),
 //                 const SizedBox(height: 16),
 //
-//                 // Phone Field
+//                 // Phone
 //                 TextFormField(
 //                   controller: _phoneController,
 //                   keyboardType: TextInputType.phone,
@@ -97,75 +118,67 @@
 //                     labelText: 'Phone Number',
 //                     border: OutlineInputBorder(),
 //                     prefixIcon: Icon(Icons.phone),
+//                     hintText: '03001234567',
 //                   ),
 //                   validator: (value) {
 //                     if (value == null || value.isEmpty) {
 //                       return 'Please enter your phone number';
+//                     } else if (!RegExp(r'^03\d{9}$').hasMatch(value)) {
+//                       return 'Please enter a valid Pakistani phone number';
 //                     }
 //                     return null;
 //                   },
 //                 ),
 //                 const SizedBox(height: 16),
 //
-//                 // Address Field
+//                 // Address
 //                 TextFormField(
 //                   controller: _addressController,
-//                   maxLines: 2,
+//                   maxLines: 3,
 //                   decoration: const InputDecoration(
-//                     labelText: 'Address',
+//                     labelText: 'Complete Address',
 //                     border: OutlineInputBorder(),
 //                     prefixIcon: Icon(Icons.location_on),
+//                     hintText: 'House #, Street, Area, City',
 //                   ),
 //                   validator: (value) {
 //                     if (value == null || value.isEmpty) {
 //                       return 'Please enter your address';
+//                     } else if (value.length < 10) {
+//                       return 'Please enter a complete address';
 //                     }
 //                     return null;
 //                   },
 //                 ),
-//                 const SizedBox(height: 16),
-//
-//                 // Location Fields (could be filled automatically via GPS)
-//                 Row(
-//                   children: [
-//                     Expanded(
-//                       child: TextFormField(
-//                         controller: _latitudeController,
-//                         keyboardType: TextInputType.number,
-//                         decoration: const InputDecoration(
-//                           labelText: 'Latitude',
-//                           border: OutlineInputBorder(),
-//                         ),
-//                       ),
-//                     ),
-//                     const SizedBox(width: 10),
-//                     Expanded(
-//                       child: TextFormField(
-//                         controller: _longitudeController,
-//                         keyboardType: TextInputType.number,
-//                         decoration: const InputDecoration(
-//                           labelText: 'Longitude',
-//                           border: OutlineInputBorder(),
-//                         ),
-//                       ),
-//                     ),
-//                   ],
-//                 ),
 //                 const SizedBox(height: 30),
 //
-//                 // Register Button
 //                 BlocConsumer<PatientBloc, PatientState>(
-//                   listener: (context, state) {
+//                   listener: (context, state) async {
 //                     if (state is PatientRegistered) {
-//                       // Navigate to dashboard on success
 //                       ScaffoldMessenger.of(context).showSnackBar(
-//                         const SnackBar(content: Text('Registration Successful!')),
+//                         const SnackBar(
+//                           content: Text('Registration Successful!'),
+//                           backgroundColor: Colors.green,
+//                         ),
 //                       );
-//                       // Navigate to patient dashboard
-//                       // Navigator.pushReplacement(...);
+//
+//                       if (!mounted) return;
+//
+//                       Navigator.pushAndRemoveUntil(
+//                         context,
+//                         MaterialPageRoute(
+//                           builder: (_) => PatientDashboard(
+//                             userId: widget.user.id,
+//                           ),
+//                         ),
+//                             (route) => false,
+//                       );
 //                     } else if (state is PatientError) {
 //                       ScaffoldMessenger.of(context).showSnackBar(
-//                         SnackBar(content: Text(state.message)),
+//                         SnackBar(
+//                           content: Text(state.message),
+//                           backgroundColor: Colors.red,
+//                         ),
 //                       );
 //                     }
 //                   },
@@ -177,8 +190,11 @@
 //                     return ElevatedButton(
 //                       onPressed: _submitForm,
 //                       style: ElevatedButton.styleFrom(
-//                         padding: const EdgeInsets.symmetric(vertical: 15),
+//                         padding: const EdgeInsets.symmetric(vertical: 16),
 //                         backgroundColor: Colors.blue,
+//                         shape: RoundedRectangleBorder(
+//                           borderRadius: BorderRadius.circular(12),
+//                         ),
 //                       ),
 //                       child: const Text(
 //                         'Complete Registration',
@@ -187,6 +203,7 @@
 //                     );
 //                   },
 //                 ),
+//                 const SizedBox(height: 20),
 //               ],
 //             ),
 //           ),
@@ -195,46 +212,25 @@
 //     );
 //   }
 //
-//   void _submitForm() {
-//     if (_formKey.currentState!.validate()) {
-//       // Create patient entity with name
-//       final patient = PatientEntity(
-//         userId: widget.user.id,
-//         name: _nameController.text.trim(), // ← Name collected here
-//         cnic: _cnicController.text.trim(),
-//         phone: _phoneController.text.trim(),
-//         address: _addressController.text.trim(),
-//         latitude: double.tryParse(_latitudeController.text),
-//         longitude: double.tryParse(_longitudeController.text),
-//         createdAt: DateTime.now(),
-//       );
-//
-//       // Trigger registration
-//       context.read<PatientBloc>().add(RegisterPatientEvent(patient));
-//     }
-//   }
-//
 //   @override
 //   void dispose() {
 //     _nameController.dispose();
 //     _cnicController.dispose();
 //     _phoneController.dispose();
 //     _addressController.dispose();
-//     _latitudeController.dispose();
-//     _longitudeController.dispose();
 //     super.dispose();
 //   }
 // }
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:geolocator/geolocator.dart'; // Add this package
-
 import '../../../../auth/domain/entities/user_entities.dart';
+import '../../../../auth/presentation/pages/login_page.dart';
 import '../../../domain/entity/patient_entity.dart';
 import '../../bloc/patient_bloc.dart';
 import '../../bloc/patient_event.dart';
 import '../../bloc/patient_state.dart';
 import 'PatientDashboardPage.dart';
+
 
 class PatientRegistrationPage extends StatefulWidget {
   final UserEntity user;
@@ -250,62 +246,19 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
   final _cnicController = TextEditingController();
   final _phoneController = TextEditingController();
   final _addressController = TextEditingController();
-  final _latitudeController = TextEditingController();
-  final _longitudeController = TextEditingController();
 
-  bool _isGettingLocation = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _getCurrentLocation();
-  }
-
-  Future<void> _getCurrentLocation() async {
-    setState(() {
-      _isGettingLocation = true;
-    });
-
-    try {
-      // Check permission
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Location permission is required for better service')),
-          );
-          return;
-        }
-      }
-
-      if (permission == LocationPermission.deniedForever) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Location permissions are permanently denied. Please enable them in settings.')),
-        );
-        return;
-      }
-
-      // Get current position
-      Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+  void _submitForm() {
+    if (_formKey.currentState!.validate()) {
+      final patient = PatientEntity(
+        userId: widget.user.id,
+        name: _nameController.text.trim(),
+        cnic: _cnicController.text.trim(),
+        phone: _phoneController.text.trim(),
+        address: _addressController.text.trim(),
+        createdAt: DateTime.now(),
       );
 
-      setState(() {
-        _latitudeController.text = position.latitude.toStringAsFixed(6);
-        _longitudeController.text = position.longitude.toStringAsFixed(6);
-      });
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not get location: $e')),
-      );
-      // Set default coordinates (Islamabad)
-      _latitudeController.text = '33.6844';
-      _longitudeController.text = '73.0479';
-    } finally {
-      setState(() {
-        _isGettingLocation = false;
-      });
+      context.read<PatientBloc>().add(RegisterPatientEvent(patient));
     }
   }
 
@@ -321,11 +274,11 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Header
                 const SizedBox(height: 20),
                 const Text(
                   'Complete Your Profile',
@@ -340,7 +293,7 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
                 ),
                 const SizedBox(height: 30),
 
-                // Name Field
+                // Name
                 TextFormField(
                   controller: _nameController,
                   decoration: const InputDecoration(
@@ -359,7 +312,7 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
                 ),
                 const SizedBox(height: 16),
 
-                // CNIC Field
+                // CNIC
                 TextFormField(
                   controller: _cnicController,
                   decoration: const InputDecoration(
@@ -380,7 +333,7 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
                 ),
                 const SizedBox(height: 16),
 
-                // Phone Field
+                // Phone
                 TextFormField(
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
@@ -394,14 +347,14 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
                     if (value == null || value.isEmpty) {
                       return 'Please enter your phone number';
                     } else if (!RegExp(r'^03\d{9}$').hasMatch(value)) {
-                      return 'Please enter a valid Pakistani phone number\nFormat: 03001234567';
+                      return 'Please enter a valid Pakistani phone number';
                     }
                     return null;
                   },
                 ),
                 const SizedBox(height: 16),
 
-                // Address Field
+                // Address
                 TextFormField(
                   controller: _addressController,
                   maxLines: 3,
@@ -420,75 +373,10 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
-
-                // Location Section
-                const Text(
-                  'Location Coordinates',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'We automatically detected your location. You can manually adjust if needed.',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _latitudeController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'Latitude',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.explore),
-                        ),
-                        readOnly: true, // Make read-only since we auto-detect
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _longitudeController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'Longitude',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.explore),
-                        ),
-                        readOnly: true, // Make read-only since we auto-detect
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Container(
-                      height: 56, // Match the TextField height
-                      child: IconButton(
-                        icon: _isGettingLocation
-                            ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                            : const Icon(Icons.my_location),
-                        onPressed: _isGettingLocation ? null : _getCurrentLocation,
-                        tooltip: 'Refresh location',
-                        style: IconButton.styleFrom(
-                          backgroundColor: Colors.blue.shade50,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            side: BorderSide(color: Colors.blue.shade200),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
                 const SizedBox(height: 30),
 
-                // Register Button
                 BlocConsumer<PatientBloc, PatientState>(
-                  listener: (context, state) {
+                  listener: (context, state) async {
                     if (state is PatientRegistered) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -496,11 +384,17 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
                           backgroundColor: Colors.green,
                         ),
                       );
-                      // Navigate to patient dashboard
+
+                      if (!mounted) return;
+
+                      // ✅ FIX: Pass the registered patient data to dashboard
                       Navigator.pushAndRemoveUntil(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => PatientDashboard(userId: widget.user.id),
+                          builder: (_) => PatientDashboard(
+                            userId: state.patient.userId,
+                            initialPatient: state.patient, // Pass the patient data
+                          ),
                         ),
                             (route) => false,
                       );
@@ -543,31 +437,12 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
     );
   }
 
-  void _submitForm() {
-    if (_formKey.currentState!.validate()) {
-      final patient = PatientEntity(
-        userId: widget.user.id,
-        name: _nameController.text.trim(),
-        cnic: _cnicController.text.trim(),
-        phone: _phoneController.text.trim(),
-        address: _addressController.text.trim(),
-        latitude: double.tryParse(_latitudeController.text),
-        longitude: double.tryParse(_longitudeController.text),
-        createdAt: DateTime.now(),
-      );
-
-      context.read<PatientBloc>().add(RegisterPatientEvent(patient));
-    }
-  }
-
   @override
   void dispose() {
     _nameController.dispose();
     _cnicController.dispose();
     _phoneController.dispose();
     _addressController.dispose();
-    _latitudeController.dispose();
-    _longitudeController.dispose();
     super.dispose();
   }
 }

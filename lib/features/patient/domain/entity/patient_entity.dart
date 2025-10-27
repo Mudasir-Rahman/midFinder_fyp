@@ -34,7 +34,7 @@ import 'package:equatable/equatable.dart';
 
 class PatientEntity extends Equatable {
   final String userId;
-  final String name; // ← ADD THIS
+  final String name;
   final String cnic;
   final String phone;
   final String address;
@@ -44,7 +44,7 @@ class PatientEntity extends Equatable {
 
   const PatientEntity({
     required this.userId,
-    required this.name, // ← ADD THIS
+    required this.name,
     required this.cnic,
     required this.phone,
     required this.address,
@@ -56,7 +56,7 @@ class PatientEntity extends Equatable {
   @override
   List<Object?> get props => [
     userId,
-    name, // ← ADD THIS
+    name,
     cnic,
     phone,
     address,

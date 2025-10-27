@@ -1,6 +1,8 @@
 import 'package:equatable/equatable.dart';
-
+import '../../../pharmacy/domain/entity/pharmacy_entity.dart';
 import '../../domain/entity/patient_entity.dart';
+
+
 
 abstract class PatientState extends Equatable {
   const PatientState();
@@ -38,6 +40,16 @@ class PatientLocationUpdated extends PatientState {
 
   @override
   List<Object> get props => [patient];
+}
+
+// ✅ NEW STATE: Nearby Pharmacies Loaded
+class NearbyPharmaciesLoaded extends PatientState {
+  final List<PharmacyEntity> pharmacies;
+
+  const NearbyPharmaciesLoaded(this.pharmacies);
+
+  @override
+  List<Object> get props => [pharmacies];
 }
 
 class PatientError extends PatientState {
