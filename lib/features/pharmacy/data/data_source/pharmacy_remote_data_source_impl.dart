@@ -1,3 +1,4 @@
+
 import 'dart:io';
 import 'dart:math';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -175,6 +176,67 @@ class PharmacyRemoteDataSourceImpl implements PharmacyRemoteDataSource {
       throw ServerException('Failed to fetch nearby pharmacies: ${e.message}');
     } catch (e) {
       throw ServerException('Unexpected error: ${e.toString()}');
+    }
+  }
+
+  // ✅ ADD THIS NEW METHOD FOR PATIENT PHARMACY SELECTION
+  @override
+  Future<PharmacyModel> selectPharmacyForOrder({
+    required String pharmacyId,
+    required String patientId,
+    required List<Map<String, dynamic>> medicines,
+  }) async {
+    try {
+      // 1. First verify pharmacy exists and is available
+      final pharmacyResponse = await supabaseClient
+          .from('pharmacies')
+          .select()
+          .eq('id', pharmacyId)
+          .eq('is_verified', true)
+          .single();
+
+      final pharmacy = PharmacyModel.fromJson(pharmacyResponse);
+
+      // 2. Check medicine availability in pharmacy inventory
+      final medicineIds = medicines.map((med) => med['medicine_id']).toList();
+
+      final inventoryResponse = await supabaseClient
+          .from('pharmacy_inventory')
+          .select('medicine_id, stock_quantity')
+          .eq('pharmacy_id', pharmacyId)
+          .filter('medicine_id', 'in', medicineIds);
+
+      // 3. Validate stock availability
+      for (final medicine in medicines) {
+        final inventoryItem = inventoryResponse.firstWhere(
+              (item) => item['medicine_id'] == medicine['medicine_id'],
+          orElse: () => {'stock_quantity': 0},
+        );
+
+        if ((inventoryItem['stock_quantity'] as int) < (medicine['quantity'] as int)) {
+          throw Exception('Insufficient stock for medicine ${medicine['medicine_id']}');
+        }
+      }
+
+      // 4. Create order or reserve medicines (depending on your flow)
+      final orderResponse = await supabaseClient
+          .from('orders')
+          .insert({
+        'patient_id': patientId,
+        'pharmacy_id': pharmacyId,
+        'medicines': medicines,
+        'status': 'pending',
+        'created_at': DateTime.now().toIso8601String(),
+      })
+          .select()
+          .single();
+
+      return pharmacy;
+
+    } on PostgrestException catch (e) {
+      throw ServerException('Failed to select pharmacy: ${e.message}');
+    } catch (e) {
+      throw ServerException('Pharmacy selection error: ${e.toString()}');
     }
   }
 

@@ -38,4 +38,9 @@ abstract class PharmacyRemoteDataSource {
     required double longitude,
     required double radiusInKm,
   });
+  Future<PharmacyModel> selectPharmacyForOrder({
+    required String pharmacyId,
+    required String patientId,
+    required List<Map<String, dynamic>> medicines,
+  });
 }
