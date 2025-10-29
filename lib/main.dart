@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -14,6 +13,8 @@ import 'features/pharmacy/presentation/bloc/pharmacy_bloc.dart';
 import 'features/splash/pages/first_splash.dart';
 import 'init_dependence.dart';
 
+// ✅ ADD FAVORITE BLOC IMPORT
+import 'features/patient/presentation/bloc/favorite_bloc.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -76,6 +77,14 @@ Future<void> _initializeDependencies() async {
       print('✅ MedicineBloc created successfully.');
     } catch (e) {
       print('❌ MedicineBloc creation failed: $e');
+    }
+
+    // ✅ ADD FAVORITE BLOC VERIFICATION
+    try {
+      sl<FavoriteBloc>();
+      print('✅ FavoriteBloc created successfully.');
+    } catch (e) {
+      print('❌ FavoriteBloc creation failed: $e');
     }
   } catch (e, st) {
     print('❌ Dependency initialization failed: $e');
@@ -159,6 +168,8 @@ class _MyAppState extends State<MyApp> {
         BlocProvider(create: (_) => sl<PatientBloc>()),
         BlocProvider(create: (_) => sl<PharmacyBloc>()),
         BlocProvider(create: (_) => sl<MedicineBloc>()),
+        // ✅ ADD FAVORITE BLOC PROVIDER
+        BlocProvider(create: (_) => sl<FavoriteBloc>()),
       ],
       child: MaterialApp(
         title: 'Rx Locator',

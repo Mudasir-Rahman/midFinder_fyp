@@ -2,6 +2,7 @@
 // import 'package:flutter/material.dart';
 // import 'package:flutter_bloc/flutter_bloc.dart';
 // import '../../../../auth/domain/entities/user_entities.dart';
+// import '../../../../auth/presentation/pages/login_page.dart';
 // import '../../../domain/entity/patient_entity.dart';
 // import '../../bloc/patient_bloc.dart';
 // import '../../bloc/patient_event.dart';
@@ -164,11 +165,13 @@
 //
 //                       if (!mounted) return;
 //
+//                       // ✅ FIX: Pass the registered patient data to dashboard
 //                       Navigator.pushAndRemoveUntil(
 //                         context,
 //                         MaterialPageRoute(
 //                           builder: (_) => PatientDashboard(
-//                             userId: widget.user.id,
+//                             userId: state.patient.userId,
+//                             initialPatient: state.patient, // Pass the patient data
 //                           ),
 //                         ),
 //                             (route) => false,
@@ -248,7 +251,11 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
   final _addressController = TextEditingController();
 
   void _submitForm() {
+    print('🎯 SUBMIT FORM CALLED');
+
     if (_formKey.currentState!.validate()) {
+      print('✅ FORM VALIDATION PASSED');
+
       final patient = PatientEntity(
         userId: widget.user.id,
         name: _nameController.text.trim(),
@@ -258,7 +265,16 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
         createdAt: DateTime.now(),
       );
 
+      print('👤 PATIENT ENTITY CREATED:');
+      print('   - User ID: ${patient.userId}');
+      print('   - Name: ${patient.name}');
+      print('   - CNIC: ${patient.cnic}');
+      print('   - Phone: ${patient.phone}');
+      print('   - Address: ${patient.address}');
+
       context.read<PatientBloc>().add(RegisterPatientEvent(patient));
+    } else {
+      print('❌ FORM VALIDATION FAILED');
     }
   }
 
@@ -377,7 +393,13 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
 
                 BlocConsumer<PatientBloc, PatientState>(
                   listener: (context, state) async {
+                    print('🎯 PATIENT BLOC STATE: ${state.runtimeType}');
+
                     if (state is PatientRegistered) {
+                      print('✅ REGISTRATION SUCCESSFUL');
+                      print('   - Patient ID: ${state.patient.userId}');
+                      print('   - Patient Name: ${state.patient.name}');
+
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('Registration Successful!'),
@@ -387,7 +409,7 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
 
                       if (!mounted) return;
 
-                      // ✅ FIX: Pass the registered patient data to dashboard
+                      print('🚀 NAVIGATING TO DASHBOARD...');
                       Navigator.pushAndRemoveUntil(
                         context,
                         MaterialPageRoute(
@@ -399,9 +421,10 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
                             (route) => false,
                       );
                     } else if (state is PatientError) {
+                      print('❌ REGISTRATION ERROR: ${state.message}');
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(state.message),
+                          content: Text('Error: ${state.message}'),
                           backgroundColor: Colors.red,
                         ),
                       );
@@ -409,6 +432,7 @@ class _PatientRegistrationPageState extends State<PatientRegistrationPage> {
                   },
                   builder: (context, state) {
                     if (state is PatientLoading) {
+                      print('⏳ REGISTRATION LOADING...');
                       return const Center(child: CircularProgressIndicator());
                     }
 
