@@ -280,4 +280,27 @@ class MedicineRemoteDataSourceImpl implements MedicineRemoteDataSource {
       throw ServerFailure(e.toString());
     }
   }
+  // 🔍 Search nearby medicines
+  @override
+  Future<List<MedicineModel>> searchNearbyMedicine(String query, double latitude, double longitude) async {
+    try {
+      // For now, implement a simple version that just searches by query
+      // You can enhance this later with actual geolocation filtering
+      final List<dynamic> response = await supabaseClient
+          .from('medicines')
+          .select('*, pharmacies(pharmacy_name, address, phone, latitude, longitude)')
+          .or('medicine_name.ilike.%$query%,generic_name.ilike.%$query%')
+          .eq('is_available', true)
+          .order('medicine_name');
+
+      return response
+          .map((json) => MedicineModel.fromJson(json))
+          .cast<MedicineModel>()
+          .toList();
+    } on PostgrestException catch (e) {
+      throw ServerFailure(e.message);
+    } catch (e) {
+      throw ServerFailure(e.toString());
+    }
+  }
 }

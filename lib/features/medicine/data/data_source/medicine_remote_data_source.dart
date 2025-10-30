@@ -24,4 +24,6 @@ abstract class MedicineRemoteDataSource {
 
   // Get medicines by category
   Future<List<MedicineModel>> getMedicineByCategory(String category);
+  // ✅ ADD THIS: Search nearby medicines
+  Future<List<MedicineModel>> searchNearbyMedicine(String query, double latitude, double longitude);
 }

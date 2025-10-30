@@ -22,6 +22,16 @@
 // import '../widget/service_cards.dart';
 // import '../widget/quick_actions.dart';
 //
+// // ✅ FAVORITE IMPORTS
+// import '../../bloc/favorite_bloc.dart';
+// import '../../bloc/favorite_event.dart';
+// import '../../bloc/favorite_state.dart';
+// import '../../../domain/entity/favorite_entity.dart';
+// import 'favorites_screen.dart';
+//
+// // ✅ ADD THIS IMPORT FOR FAVORITES SCREEN
+//
+//
 // class PatientDashboard extends StatefulWidget {
 //   final String userId;
 //   final PatientEntity? initialPatient;
@@ -48,6 +58,20 @@
 //   PatientEntity? _currentPatient;
 //   bool _profileLoaded = false;
 //
+//   // ✅ ADD MEDICINE CATEGORIES BASED ON YOUR ENTITY
+//   final List<MedicineCategory> _medicineCategories = [
+//     MedicineCategory(name: 'All', icon: Icons.medication, category: 'all'),
+//     MedicineCategory(name: 'Pain Relief', icon: Icons.sick, category: 'Analgesics'),
+//     MedicineCategory(name: 'Antibiotics', icon: Icons.health_and_safety, category: 'Antibiotics'),
+//     MedicineCategory(name: 'Vitamins', icon: Icons.eco, category: 'Vitamins'),
+//     MedicineCategory(name: 'Cold & Flu', icon: Icons.ac_unit, category: 'Cold & Flu'),
+//     MedicineCategory(name: 'Cardiac', icon: Icons.favorite, category: 'Cardiovascular'),
+//     MedicineCategory(name: 'Diabetes', icon: Icons.bloodtype, category: 'Diabetes'),
+//     MedicineCategory(name: 'Other', icon: Icons.medical_services, category: 'Other'),
+//   ];
+//
+//   String _selectedCategory = 'all';
+//
 //   @override
 //   void initState() {
 //     super.initState();
@@ -70,14 +94,17 @@
 //       end: Offset.zero,
 //     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
 //
-//     _loadPatientData();
+//     WidgetsBinding.instance.addPostFrameCallback((_) {
+//       _loadPatientData();
+//     });
+//
 //     _controller.forward();
 //   }
 //
 //   Future<void> _loadPatientData() async {
 //     final user = Supabase.instance.client.auth.currentUser;
 //     if (user == null) {
-//       WidgetsBinding.instance.addPostFrameCallback((_) => _showAuthError(context));
+//       _showAuthError();
 //       return;
 //     }
 //
@@ -85,10 +112,15 @@
 //       context.read<PatientBloc>().add(GetPatientProfileEvent(userId: widget.userId));
 //     }
 //     context.read<MedicineBloc>().add(GetAllMedicinesEvent());
+//
+//     // ✅ LOAD PATIENT'S FAVORITES
+//     context.read<FavoriteBloc>().add(LoadFavoritesEvent(patientId: widget.userId));
 //   }
 //
-//   void _showAuthError(BuildContext context) {
-//     _showSnack('Please log in to continue', isError: true);
+//   void _showAuthError() {
+//     if (mounted) {
+//       _showSnack('Please log in to continue', isError: true);
+//     }
 //   }
 //
 //   Future<void> _getCurrentLocation() async {
@@ -174,12 +206,64 @@
 //     );
 //   }
 //
+//   // ✅ ADD CATEGORY SELECTION METHOD
+//   void _onCategorySelected(String category) {
+//     setState(() {
+//       _selectedCategory = category;
+//     });
+//
+//     if (category == 'all') {
+//       context.read<MedicineBloc>().add(GetAllMedicinesEvent());
+//     } else {
+//       // FIXED: Use the correct event constructor
+//       context.read<MedicineBloc>().add(GetMedicineByCategoryEvent(category: category));
+//     }
+//   }
+//
 //   void _handleMedicineSearch(String query) {
 //     if (query.isEmpty) {
-//       context.read<MedicineBloc>().add(GetAllMedicinesEvent());
+//       if (_selectedCategory == 'all') {
+//         context.read<MedicineBloc>().add(GetAllMedicinesEvent());
+//       } else {
+//         // FIXED: Use the correct event constructor
+//         context.read<MedicineBloc>().add(GetMedicineByCategoryEvent(category: _selectedCategory));
+//       }
 //     } else {
 //       context.read<MedicineBloc>().add(SearchMedicineEvent(query: query));
 //     }
+//   }
+//
+//   // ✅ ADD FAVORITE FUNCTIONALITY
+//   void _toggleMedicineFavorite(String medicineId, String medicineName, String? imageUrl, double? price) {
+//     context.read<FavoriteBloc>().add(ToggleFavoriteEvent(
+//       patientId: widget.userId,
+//       itemId: medicineId,
+//       type: FavoriteType.medicine,
+//       itemName: medicineName,
+//       itemImage: imageUrl,
+//       itemPrice: price,
+//     ));
+//   }
+//
+//   void _togglePharmacyFavorite(String pharmacyId, String pharmacyName) {
+//     context.read<FavoriteBloc>().add(ToggleFavoriteEvent(
+//       patientId: widget.userId,
+//       itemId: pharmacyId,
+//       type: FavoriteType.pharmacy,
+//       itemName: pharmacyName,
+//       itemImage: null,
+//       itemPrice: null,
+//     ));
+//   }
+//
+//   // ✅ UPDATED FAVORITES SCREEN NAVIGATION
+//   void _navigateToFavorites() {
+//     Navigator.push(
+//       context,
+//       MaterialPageRoute(
+//         builder: (context) => PatientFavoritesScreen(patientId: widget.userId),
+//       ),
+//     );
 //   }
 //
 //   @override
@@ -196,6 +280,11 @@
 //
 //     return Scaffold(
 //       backgroundColor: bgColor,
+//       floatingActionButton: FloatingActionButton(
+//         onPressed: _navigateToFavorites,
+//         backgroundColor: primary,
+//         child: const Icon(Icons.favorite, color: Colors.white),
+//       ),
 //       body: FadeTransition(
 //         opacity: _fadeInAnimation,
 //         child: SlideTransition(
@@ -241,10 +330,16 @@
 //                               ),
 //                               const SizedBox(height: 24),
 //
-//                               // Quick Actions
-//                               QuickActions(onActionSelected: (action) {
-//                                 debugPrint("Action: $action");
-//                               }),
+//                               // Quick Actions - ADD FAVORITES OPTION
+//                               QuickActions(
+//                                 onActionSelected: (action) {
+//                                   if (action == 'favorites') {
+//                                     _navigateToFavorites();
+//                                   } else {
+//                                     debugPrint("Action: $action");
+//                                   }
+//                                 },
+//                               ),
 //                               const SizedBox(height: 28),
 //
 //                               // Location & Pharmacies Section
@@ -254,18 +349,27 @@
 //                                 nearbyPharmacies: _nearbyPharmacies,
 //                                 isUpdating: _isUpdatingLocation,
 //                                 onUpdateLocation: _getCurrentLocation,
+//                                 onTogglePharmacyFavorite: _togglePharmacyFavorite,
 //                               ),
 //                               const SizedBox(height: 28),
+//
+//                               // ✅ ADD MEDICINE CATEGORIES SECTION
+//                               _buildMedicineCategoriesSection(primary),
+//                               const SizedBox(height: 20),
 //
 //                               // Medicines Section
 //                               _buildMedicinesSection(primary),
 //                               const SizedBox(height: 28),
 //
-//                               // Services Section
+//                               // Services Section - ADD FAVORITES SERVICE
 //                               ServiceCards(
 //                                 screenWidth: screenWidth,
 //                                 onServiceTap: (service) {
-//                                   debugPrint("Service tapped: $service");
+//                                   if (service == 'favorites') {
+//                                     _navigateToFavorites();
+//                                   } else {
+//                                     debugPrint("Service tapped: $service");
+//                                   }
 //                                 },
 //                               ),
 //                               const SizedBox(height: 32),
@@ -286,6 +390,93 @@
 //     );
 //   }
 //
+//   // ✅ ADD MEDICINE CATEGORIES WIDGET
+//   Widget _buildMedicineCategoriesSection(Color primary) {
+//     return Column(
+//       crossAxisAlignment: CrossAxisAlignment.start,
+//       children: [
+//         Padding(
+//           padding: const EdgeInsets.symmetric(horizontal: 8.0),
+//           child: Text(
+//             'Medicine Categories',
+//             style: TextStyle(
+//               fontSize: 20,
+//               fontWeight: FontWeight.bold,
+//               color: primary,
+//             ),
+//           ),
+//         ),
+//         const SizedBox(height: 12),
+//         SizedBox(
+//           height: 100,
+//           child: ListView.builder(
+//             scrollDirection: Axis.horizontal,
+//             itemCount: _medicineCategories.length,
+//             itemBuilder: (context, index) {
+//               final category = _medicineCategories[index];
+//               final isSelected = _selectedCategory == category.category;
+//
+//               return Padding(
+//                 padding: const EdgeInsets.only(right: 12),
+//                 child: Column(
+//                   children: [
+//                     GestureDetector(
+//                       onTap: () => _onCategorySelected(category.category),
+//                       child: Container(
+//                         width: 70,
+//                         height: 70,
+//                         decoration: BoxDecoration(
+//                           color: isSelected ? primary : Colors.white,
+//                           borderRadius: BorderRadius.circular(16),
+//                           boxShadow: [
+//                             BoxShadow(
+//                               color: Colors.black12,
+//                               blurRadius: 8,
+//                               offset: const Offset(0, 2),
+//                             ),
+//                           ],
+//                           border: isSelected
+//                               ? Border.all(color: primary, width: 2)
+//                               : null,
+//                         ),
+//                         child: Column(
+//                           mainAxisAlignment: MainAxisAlignment.center,
+//                           children: [
+//                             Icon(
+//                               category.icon,
+//                               color: isSelected ? Colors.white : primary,
+//                               size: 24,
+//                             ),
+//                             const SizedBox(height: 4),
+//                           ],
+//                         ),
+//                       ),
+//                     ),
+//                     const SizedBox(height: 4),
+//                     SizedBox(
+//                       width: 70,
+//                       child: Text(
+//                         category.name,
+//                         textAlign: TextAlign.center,
+//                         style: TextStyle(
+//                           fontSize: 12,
+//                           fontWeight: FontWeight.w500,
+//                           color: isSelected ? primary : Colors.grey[700],
+//                         ),
+//                         maxLines: 2,
+//                         overflow: TextOverflow.ellipsis,
+//                       ),
+//                     ),
+//                   ],
+//                 ),
+//               );
+//             },
+//           ),
+//         ),
+//       ],
+//     );
+//   }
+//
 //   Widget _buildMedicinesSection(Color primary) {
 //     return BlocBuilder<MedicineBloc, MedicineState>(
 //       builder: (context, medState) {
@@ -294,14 +485,49 @@
 //         }
 //
 //         if (medState is MedicineLoaded) {
+//           // ✅ FILTER MEDICINES BY AVAILABILITY
+//           final availableMedicines = medState.medicines.where((medicine) =>
+//           medicine.isAvailable == true
+//           ).toList();
+//
 //           return Column(
 //             crossAxisAlignment: CrossAxisAlignment.start,
 //             children: [
+//               // Category Title
+//               Padding(
+//                 padding: const EdgeInsets.symmetric(horizontal: 8.0),
+//                 child: Row(
+//                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//                   children: [
+//                     Text(
+//                       _selectedCategory == 'all'
+//                           ? 'All Medicines'
+//                           : '$_selectedCategory Medicines',
+//                       style: TextStyle(
+//                         fontSize: 18,
+//                         fontWeight: FontWeight.bold,
+//                         color: primary,
+//                       ),
+//                     ),
+//                     if (availableMedicines.isNotEmpty)
+//                       Text(
+//                         '${availableMedicines.length} available',
+//                         style: TextStyle(
+//                           fontSize: 14,
+//                           color: Colors.grey[600],
+//                         ),
+//                       ),
+//                   ],
+//                 ),
+//               ),
+//               const SizedBox(height: 12),
+//
 //               MedicineSection(
 //                 nearbyPharmacies: _nearbyPharmacies,
 //                 currentPosition: _currentPosition,
-//                 allMedicines: medState.medicines,
+//                 allMedicines: availableMedicines, // ✅ Only show available medicines
 //                 onSearchRequested: _handleMedicineSearch,
+//                 onToggleMedicineFavorite: _toggleMedicineFavorite,
 //               ),
 //               const SizedBox(height: 16),
 //               Center(
@@ -347,7 +573,19 @@
 //     );
 //   }
 // }
-
+//
+// // ✅ ADD MEDICINE CATEGORY MODEL
+// class MedicineCategory {
+//   final String name;
+//   final IconData icon;
+//   final String category;
+//
+//   MedicineCategory({
+//     required this.name,
+//     required this.icon,
+//     required this.category,
+//   });
+// }
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
@@ -370,7 +608,7 @@ import '../widget/location_section.dart';
 import '../widget/location_status_card.dart';
 import '../widget/medicine_section.dart';
 import '../widget/service_cards.dart';
-import '../widget/quick_actions.dart';
+import '../widget/quick_actions.dart'; // ✅ NORMAL IMPORT
 
 // ✅ FAVORITE IMPORTS
 import '../../bloc/favorite_bloc.dart';
@@ -378,7 +616,6 @@ import '../../bloc/favorite_event.dart';
 import '../../bloc/favorite_state.dart';
 import '../../../domain/entity/favorite_entity.dart';
 import 'favorites_screen.dart';
-
 
 class PatientDashboard extends StatefulWidget {
   final String userId;
@@ -406,6 +643,20 @@ class _PatientDashboardState extends State<PatientDashboard>
   PatientEntity? _currentPatient;
   bool _profileLoaded = false;
 
+  // ✅ ADD MEDICINE CATEGORIES BASED ON YOUR ENTITY
+  final List<MedicineCategory> _medicineCategories = [
+    MedicineCategory(name: 'All', icon: Icons.medication, category: 'all'),
+    MedicineCategory(name: 'Pain Relief', icon: Icons.sick, category: 'Analgesics'),
+    MedicineCategory(name: 'Antibiotics', icon: Icons.health_and_safety, category: 'Antibiotics'),
+    MedicineCategory(name: 'Vitamins', icon: Icons.eco, category: 'Vitamins'),
+    MedicineCategory(name: 'Cold & Flu', icon: Icons.ac_unit, category: 'Cold & Flu'),
+    MedicineCategory(name: 'Cardiac', icon: Icons.favorite, category: 'Cardiovascular'),
+    MedicineCategory(name: 'Diabetes', icon: Icons.bloodtype, category: 'Diabetes'),
+    MedicineCategory(name: 'Other', icon: Icons.medical_services, category: 'Other'),
+  ];
+
+  String _selectedCategory = 'all';
+
   @override
   void initState() {
     super.initState();
@@ -428,7 +679,6 @@ class _PatientDashboardState extends State<PatientDashboard>
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
 
-    // ✅ Don't call context-dependent methods in initState
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadPatientData();
     });
@@ -448,7 +698,7 @@ class _PatientDashboardState extends State<PatientDashboard>
     }
     context.read<MedicineBloc>().add(GetAllMedicinesEvent());
 
-    // ✅ LOAD PATIENT'S FAVORITES - Now safe to call after first frame
+    // ✅ LOAD PATIENT'S FAVORITES
     context.read<FavoriteBloc>().add(LoadFavoritesEvent(patientId: widget.userId));
   }
 
@@ -541,9 +791,26 @@ class _PatientDashboardState extends State<PatientDashboard>
     );
   }
 
+  // ✅ ADD CATEGORY SELECTION METHOD
+  void _onCategorySelected(String category) {
+    setState(() {
+      _selectedCategory = category;
+    });
+
+    if (category == 'all') {
+      context.read<MedicineBloc>().add(GetAllMedicinesEvent());
+    } else {
+      context.read<MedicineBloc>().add(GetMedicineByCategoryEvent(category: category));
+    }
+  }
+
   void _handleMedicineSearch(String query) {
     if (query.isEmpty) {
-      context.read<MedicineBloc>().add(GetAllMedicinesEvent());
+      if (_selectedCategory == 'all') {
+        context.read<MedicineBloc>().add(GetAllMedicinesEvent());
+      } else {
+        context.read<MedicineBloc>().add(GetMedicineByCategoryEvent(category: _selectedCategory));
+      }
     } else {
       context.read<MedicineBloc>().add(SearchMedicineEvent(query: query));
     }
@@ -572,14 +839,18 @@ class _PatientDashboardState extends State<PatientDashboard>
     ));
   }
 
-  // ✅ UPDATED FAVORITES SCREEN NAVIGATION - FIXED CONTEXT ISSUE
+  // ✅ UPDATED FAVORITES SCREEN NAVIGATION WITH DEBUG PRINTS
   void _navigateToFavorites() {
+    print('❤️ Navigating to Favorites screen for patient: ${widget.userId}');
+
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => PatientFavoritesScreen(patientId: widget.userId),
       ),
-    );
+    ).then((_) {
+      print('🔙 Returned from Favorites screen');
+    });
   }
 
   @override
@@ -596,7 +867,6 @@ class _PatientDashboardState extends State<PatientDashboard>
 
     return Scaffold(
       backgroundColor: bgColor,
-      // ✅ ADD FLOATING ACTION BUTTON FOR FAVORITES
       floatingActionButton: FloatingActionButton(
         onPressed: _navigateToFavorites,
         backgroundColor: primary,
@@ -647,13 +917,34 @@ class _PatientDashboardState extends State<PatientDashboard>
                               ),
                               const SizedBox(height: 24),
 
-                              // Quick Actions - ADD FAVORITES OPTION
-                              QuickActions(
+                              // ✅ FIXED: Quick Actions with correct Favorites handling
+                              QuickActions( // ✅ USE NORMAL IMPORT
                                 onActionSelected: (action) {
-                                  if (action == 'favorites') {
+                                  print('🎯 Quick Action Selected: $action');
+
+                                  if (action == 'Favorites') { // ✅ FIXED: Capital F
+                                    print('❤️ Navigating to Favorites screen...');
                                     _navigateToFavorites();
                                   } else {
                                     debugPrint("Action: $action");
+                                    // Handle other actions
+                                    switch (action) {
+                                      case 'Nearby Pharmacies':
+                                      // Navigate to pharmacies
+                                        break;
+                                      case 'My Medicines':
+                                      // Navigate to medicines
+                                        break;
+                                      case 'Orders':
+                                      // Navigate to orders
+                                        break;
+                                      case 'Settings':
+                                      // Navigate to settings
+                                        break;
+                                      case 'Help':
+                                      // Navigate to help
+                                        break;
+                                    }
                                   }
                                 },
                               ),
@@ -669,6 +960,10 @@ class _PatientDashboardState extends State<PatientDashboard>
                                 onTogglePharmacyFavorite: _togglePharmacyFavorite,
                               ),
                               const SizedBox(height: 28),
+
+                              // ✅ ADD MEDICINE CATEGORIES SECTION
+                              _buildMedicineCategoriesSection(primary),
+                              const SizedBox(height: 20),
 
                               // Medicines Section
                               _buildMedicinesSection(primary),
@@ -703,6 +998,93 @@ class _PatientDashboardState extends State<PatientDashboard>
     );
   }
 
+  // ✅ ADD MEDICINE CATEGORIES WIDGET
+  Widget _buildMedicineCategoriesSection(Color primary) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          child: Text(
+            'Medicine Categories',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: primary,
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 100,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: _medicineCategories.length,
+            itemBuilder: (context, index) {
+              final category = _medicineCategories[index];
+              final isSelected = _selectedCategory == category.category;
+
+              return Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: Column(
+                  children: [
+                    GestureDetector(
+                      onTap: () => _onCategorySelected(category.category),
+                      child: Container(
+                        width: 70,
+                        height: 70,
+                        decoration: BoxDecoration(
+                          color: isSelected ? primary : Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black12,
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                          border: isSelected
+                              ? Border.all(color: primary, width: 2)
+                              : null,
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              category.icon,
+                              color: isSelected ? Colors.white : primary,
+                              size: 24,
+                            ),
+                            const SizedBox(height: 4),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    SizedBox(
+                      width: 70,
+                      child: Text(
+                        category.name,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: isSelected ? primary : Colors.grey[700],
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildMedicinesSection(Color primary) {
     return BlocBuilder<MedicineBloc, MedicineState>(
       builder: (context, medState) {
@@ -711,13 +1093,47 @@ class _PatientDashboardState extends State<PatientDashboard>
         }
 
         if (medState is MedicineLoaded) {
+          // ✅ FILTER MEDICINES BY AVAILABILITY
+          final availableMedicines = medState.medicines.where((medicine) =>
+          medicine.isAvailable == true
+          ).toList();
+
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Category Title
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      _selectedCategory == 'all'
+                          ? 'All Medicines'
+                          : '$_selectedCategory Medicines',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: primary,
+                      ),
+                    ),
+                    if (availableMedicines.isNotEmpty)
+                      Text(
+                        '${availableMedicines.length} available',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+
               MedicineSection(
                 nearbyPharmacies: _nearbyPharmacies,
                 currentPosition: _currentPosition,
-                allMedicines: medState.medicines,
+                allMedicines: availableMedicines, // ✅ Only show available medicines
                 onSearchRequested: _handleMedicineSearch,
                 onToggleMedicineFavorite: _toggleMedicineFavorite,
               ),
@@ -764,4 +1180,17 @@ class _PatientDashboardState extends State<PatientDashboard>
       },
     );
   }
+}
+
+// ✅ ADD MEDICINE CATEGORY MODEL
+class MedicineCategory {
+  final String name;
+  final IconData icon;
+  final String category;
+
+  MedicineCategory({
+    required this.name,
+    required this.icon,
+    required this.category,
+  });
 }
