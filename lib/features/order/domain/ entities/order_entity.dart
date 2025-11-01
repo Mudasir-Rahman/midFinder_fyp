@@ -1,0 +1,349 @@
+// domain/entities/order_entity.dart
+import 'package:equatable/equatable.dart';
+import '../../../medicine/domain/entities/medicine_entity.dart';
+
+enum OrderStatus {
+  pending('Pending', 'pending'),
+  confirmed('Confirmed', 'confirmed'),
+  processing('Processing', 'processing'),
+  readyForPickup('ReadyForPickup', 'readyForPickup'),
+  outForDelivery('OutForDelivery', 'outForDelivery'),
+  delivered('Delivered', 'delivered'),
+  cancelled('Cancelled', 'cancelled');
+
+  const OrderStatus(this.displayName, this.dbValue);
+  final String displayName;
+  final String dbValue;
+
+  static OrderStatus fromString(String value) {
+    return OrderStatus.values.firstWhere(
+          (e) => e.dbValue == value,
+      orElse: () => OrderStatus.pending,
+    );
+  }
+}
+
+enum OrderType {
+  delivery('Delivery', 'delivery'),
+  pickup('Pickup', 'pickup');
+
+  const OrderType(this.displayName, this.dbValue);
+  final String displayName;
+  final String dbValue;
+
+  static OrderType fromString(String value) {
+    return OrderType.values.firstWhere(
+          (e) => e.dbValue == value,
+      orElse: () => OrderType.delivery,
+    );
+  }
+}
+
+enum PaymentMethod {
+  cash('Cash', 'cash'),
+  card('Card', 'card'),
+  online('Online', 'online');
+
+  const PaymentMethod(this.displayName, this.dbValue);
+  final String displayName;
+  final String dbValue;
+
+  static PaymentMethod fromString(String value) {
+    return PaymentMethod.values.firstWhere(
+          (e) => e.dbValue == value,
+      orElse: () => PaymentMethod.cash,
+    );
+  }
+}
+
+class OrderEntity extends Equatable {
+  final String id;
+  final String patientId;
+  final String pharmacyId;
+  final List<OrderItemEntity> items;
+  final OrderType orderType;
+  final OrderStatus orderStatus;
+  final PaymentMethod paymentMethod;
+  final DateTime orderDate;
+  final double totalPrice;
+  final DateTime createdAt;
+  final DateTime? updatedAt;
+
+  // Additional fields
+  final String? deliveryAddress;
+  final String? prescriptionImageUrl;
+  final String? notes;
+
+  // Related data (from joins)
+  final String? pharmacyName;
+  final String? patientName;
+  final String? patientPhone;
+  final String? patientAddress;
+
+  const OrderEntity({
+    required this.id,
+    required this.patientId,
+    required this.pharmacyId,
+    required this.items,
+    required this.orderType,
+    required this.orderStatus,
+    required this.paymentMethod,
+    required this.orderDate,
+    required this.totalPrice,
+    required this.createdAt,
+    this.updatedAt,
+    this.deliveryAddress,
+    this.prescriptionImageUrl,
+    this.notes,
+    this.pharmacyName,
+    this.patientName,
+    this.patientPhone,
+    this.patientAddress,
+  });
+
+  @override
+  List<Object?> get props => [
+    id,
+    patientId,
+    pharmacyId,
+    items,
+    orderType,
+    orderStatus,
+    paymentMethod,
+    orderDate,
+    totalPrice,
+    createdAt,
+    updatedAt,
+    deliveryAddress,
+    prescriptionImageUrl,
+    notes,
+    pharmacyName,
+    patientName,
+    patientPhone,
+    patientAddress,
+  ];
+
+  // Copy with method
+  OrderEntity copyWith({
+    String? id,
+    String? patientId,
+    String? pharmacyId,
+    List<OrderItemEntity>? items,
+    OrderType? orderType,
+    OrderStatus? orderStatus,
+    PaymentMethod? paymentMethod,
+    DateTime? orderDate,
+    double? totalPrice,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    String? deliveryAddress,
+    String? prescriptionImageUrl,
+    String? notes,
+    String? pharmacyName,
+    String? patientName,
+    String? patientPhone,
+    String? patientAddress,
+  }) {
+    return OrderEntity(
+      id: id ?? this.id,
+      patientId: patientId ?? this.patientId,
+      pharmacyId: pharmacyId ?? this.pharmacyId,
+      items: items ?? this.items,
+      orderType: orderType ?? this.orderType,
+      orderStatus: orderStatus ?? this.orderStatus,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
+      orderDate: orderDate ?? this.orderDate,
+      totalPrice: totalPrice ?? this.totalPrice,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deliveryAddress: deliveryAddress ?? this.deliveryAddress,
+      prescriptionImageUrl: prescriptionImageUrl ?? this.prescriptionImageUrl,
+      notes: notes ?? this.notes,
+      pharmacyName: pharmacyName ?? this.pharmacyName,
+      patientName: patientName ?? this.patientName,
+      patientPhone: patientPhone ?? this.patientPhone,
+      patientAddress: patientAddress ?? this.patientAddress,
+    );
+  }
+
+  // Factory method to create order
+  factory OrderEntity.create({
+    required String patientId,
+    required String pharmacyId,
+    required List<OrderItemEntity> items,
+    required OrderType orderType,
+    required PaymentMethod paymentMethod,
+    String? deliveryAddress,
+    String? prescriptionImageUrl,
+    String? notes,
+    String? pharmacyName,
+  }) {
+    final totalPrice = items.fold(0.0, (sum, item) => sum + item.subtotal);
+
+    return OrderEntity(
+      id: '', // Will be generated by database
+      patientId: patientId,
+      pharmacyId: pharmacyId,
+      items: items,
+      orderType: orderType,
+      orderStatus: OrderStatus.pending,
+      paymentMethod: paymentMethod,
+      orderDate: DateTime.now(),
+      totalPrice: totalPrice,
+      createdAt: DateTime.now(),
+      deliveryAddress: deliveryAddress,
+      prescriptionImageUrl: prescriptionImageUrl,
+      notes: notes,
+      pharmacyName: pharmacyName,
+    );
+  }
+
+  // Factory method from single medicine (convenience)
+  factory OrderEntity.fromMedicine({
+    required String patientId,
+    required String pharmacyId,
+    required String pharmacyName,
+    required MedicineEntity medicine,
+    required int quantity,
+    required OrderType orderType,
+    required PaymentMethod paymentMethod,
+    String? deliveryAddress,
+    String? prescriptionImageUrl,
+    String? notes,
+  }) {
+    final orderItem = OrderItemEntity.fromMedicine(
+      medicine: medicine,
+      quantity: quantity,
+    );
+
+    return OrderEntity.create(
+      patientId: patientId,
+      pharmacyId: pharmacyId,
+      items: [orderItem],
+      orderType: orderType,
+      paymentMethod: paymentMethod,
+      deliveryAddress: deliveryAddress,
+      prescriptionImageUrl: prescriptionImageUrl,
+      notes: notes,
+      pharmacyName: pharmacyName,
+    );
+  }
+
+  // Helper methods
+  bool get canBeCancelled =>
+      orderStatus == OrderStatus.pending || orderStatus == OrderStatus.confirmed;
+
+  bool get isDelivery => orderType == OrderType.delivery;
+  bool get isPickup => orderType == OrderType.pickup;
+
+  // Get primary medicine for single-item orders
+  OrderItemEntity get primaryMedicine => items.first;
+
+  // Get all medicine IDs
+  List<String> get medicineIds => items.map((item) => item.medicineId).toList();
+
+  // Check if order contains prescription items
+  bool get hasPrescriptionItems =>
+      items.any((item) => item.requiresPrescription);
+}
+
+class OrderItemEntity extends Equatable {
+  final String medicineId;
+  final String medicineName;
+  final String? medicineImageUrl;
+  final double medicinePrice; // Price at time of order
+  final int quantity;
+  final double subtotal;
+
+  // Additional medicine details
+  final String dosage;
+  final String manufacturer;
+  final String genericName;
+  final String description;
+  final String category;
+  final bool requiresPrescription;
+
+  const OrderItemEntity({
+    required this.medicineId,
+    required this.medicineName,
+    this.medicineImageUrl,
+    required this.medicinePrice,
+    required this.quantity,
+    required this.subtotal,
+    required this.dosage,
+    required this.manufacturer,
+    required this.genericName,
+    required this.description,
+    required this.category,
+    required this.requiresPrescription,
+  });
+
+  @override
+  List<Object?> get props => [
+    medicineId,
+    medicineName,
+    medicineImageUrl,
+    medicinePrice,
+    quantity,
+    subtotal,
+    dosage,
+    manufacturer,
+    genericName,
+    description,
+    category,
+    requiresPrescription,
+  ];
+
+  // Factory method from medicine entity
+  factory OrderItemEntity.fromMedicine({
+    required MedicineEntity medicine,
+    required int quantity,
+  }) {
+    final price = medicine.price ?? 0.0;
+    return OrderItemEntity(
+      medicineId: medicine.id,
+      medicineName: medicine.medicineName,
+      medicineImageUrl: medicine.imageUrl,
+      medicinePrice: price,
+      quantity: quantity,
+      subtotal: price * quantity,
+      dosage: medicine.dosage,
+      manufacturer: medicine.manufacturer,
+      genericName: medicine.genericName,
+      description: medicine.description,
+      category: medicine.category,
+      requiresPrescription: medicine.requiresPrescription ?? false,
+    );
+  }
+
+  // Copy with method
+  OrderItemEntity copyWith({
+    String? medicineId,
+    String? medicineName,
+    String? medicineImageUrl,
+    double? medicinePrice,
+    int? quantity,
+    double? subtotal,
+    String? dosage,
+    String? manufacturer,
+    String? genericName,
+    String? description,
+    String? category,
+    bool? requiresPrescription,
+  }) {
+    return OrderItemEntity(
+      medicineId: medicineId ?? this.medicineId,
+      medicineName: medicineName ?? this.medicineName,
+      medicineImageUrl: medicineImageUrl ?? this.medicineImageUrl,
+      medicinePrice: medicinePrice ?? this.medicinePrice,
+      quantity: quantity ?? this.quantity,
+      subtotal: subtotal ?? this.subtotal,
+      dosage: dosage ?? this.dosage,
+      manufacturer: manufacturer ?? this.manufacturer,
+      genericName: genericName ?? this.genericName,
+      description: description ?? this.description,
+      category: category ?? this.category,
+      requiresPrescription: requiresPrescription ?? this.requiresPrescription,
+    );
+  }
+}

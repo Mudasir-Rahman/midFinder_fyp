@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class AppColor {
-  // ============ PRIMARY COLORS ============
+  // ============ PRIMARY COLORS (General App - Blue) ============
   static const Color primaryColor = Color(0xFF1E3E72);
   static const Color primaryDark = Color(0xFF0D2B5C);
   static const Color primaryLight = Color(0xFF2E4E8F);
@@ -13,8 +13,8 @@ class AppColor {
   static const Color accentLight = Color(0xFF7CD8FF);
   static const Color accentContainer = Color(0xFFE8F7FD);
 
-  // ============ SUCCESS COLORS ============
-  static const Color successColor = Color(0xFF5ABA4A);
+  // ============ SUCCESS COLORS (Health/Green) ============
+  static const Color successColor = Color(0xFF5ABA4A); // The new Patient Primary Color
   static const Color successDark = Color(0xFF4AA83A);
   static const Color successLight = Color(0xFF6BCF59);
   static const Color successContainer = Color(0xFFE8F5E8);
@@ -33,9 +33,9 @@ class AppColor {
 
   // ============ NEUTRAL COLORS ============
   static const Color whiteColor = Color(0xFFFFFFFF);
-  static const Color backgroundColor = Color(0xFFF8FAFC);
+  static const Color backgroundColor = Color(0xFFF8FAFC); // Very Light Grey (Used for Scaffold)
   static const Color surfaceColor = Color(0xFFFFFFFF);
-  static const Color cardColor = Color(0xFFFFFFFF);
+  static const Color cardColor = Color(0xFFFFFFFF); // Pure White (Used for Cards/Sections)
 
   // ============ TEXT COLORS ============
   static const Color bodyTextColor = Color(0xFF334155);
@@ -99,10 +99,11 @@ class AppColor {
     end: Alignment.bottomRight,
   );
 
-  // ============ PATIENT THEME COLORS ============
-  static const Color kPatientPrimary = Color(0xFF1E3E72);
-  static const Color kPatientBackground1 = Color(0xFFB3C7F9);
-  static const Color kPatientBackground2 = Color(0xFFDFE8FB);
+  // ============ PATIENT THEME COLORS (UPDATED) ============
+  // Adopt the professional green for the patient theme
+  static const Color kPatientPrimary = successColor;
+  static const Color kPatientBackground1 = backgroundColor; // Use the main light background for Scaffold
+  static const Color kPatientBackground2 = cardColor; // Use pure white for Cards/Sections
 
   // ============ SHIMMER GRADIENT ============
   static const Gradient shimmerGradient = LinearGradient(
